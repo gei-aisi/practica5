@@ -1,16 +1,12 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 require_relative 'provisioning/vbox.rb'
-VBoxUtils.check_version('7.0.6')
-Vagrant.require_version ">= 2.3.4"
+VBoxUtils.check_version('7.0.14')
+Vagrant.require_version ">= 2.4.1"
 
-class VagrantPlugins::ProviderVirtualBox::Action::Network
-  def dhcp_server_matches_config?(dhcp_server, config)
-    true
-  end
-end
-
-CLIENT_HOSTNAME = "xxx-aisi2223-cli"
+CLIENT_HOSTNAME = "xxx2324-client"
+# DO NOT change the OMV hostname
+OMV_HOSTNAME = "omv-server"
 
 Vagrant.configure("2") do |config|
   # Configure hostmanager and vbguest plugins
@@ -19,13 +15,13 @@ Vagrant.configure("2") do |config|
   config.hostmanager.manage_guest = true
   config.vbguest.auto_update = false
 
-  config.vm.define "omv", primary: true do |omv|
-    omv.vm.box = "rreye/omv6"
+  config.vm.define "omv-server", primary: true do |omv|
+    omv.vm.box = "rreye/omv7"
     omv.vm.box_version = "1.0"
     omv.vm.box_check_update = false
-    omv.vm.hostname = "omv-server"
-    omv.vm.network "private_network", ip: "192.172.16.25", virtualbox__intnet: true
+    omv.vm.hostname = OMV_HOSTNAME
     omv.vm.network "forwarded_port", guest: 80, host: 9090
+    omv.vm.network "private_network", ip: "192.172.16.25", virtualbox__intnet: "omv"
     omv.vm.synced_folder ".", "/vagrant", type: "virtualbox"
 
     omv.vm.provider "virtualbox" do |prov|
@@ -36,23 +32,21 @@ Vagrant.configure("2") do |config|
 
       # Add disks
       for i in 0..2 do
-        disk = "./disks/disk#{i}.vdi"
-        unless File.exist?(disk)
-          prov.customize ["createmedium", "disk", "--filename", disk, "--format", "VDI", "--size", 10 * 1024]
+        filename = "./disks/disk#{i}.vdi"
+        unless File.exist?(filename)
+          prov.customize ["createmedium", "disk", "--filename", filename, "--format", "VDI", "--size", 10 * 1024]
         end
-        prov.customize ["storageattach", :id, "--storagectl","SATA Controller", "--port", i + 1, "--device", 0, "--type", "hdd", "--medium", disk]
+        prov.customize ["storageattach", :id, "--storagectl","SATA Controller", "--port", i+1, "--device", 0, "--type", "hdd", "--medium", filename]
       end
     end
   end
 
   config.vm.define "client" do |client|
-    client.vm.box = "ubuntu/focal64"
-    client.vm.box_version = "20230110.0.0"
-    #client.vm.box = "ubuntu/bionic64"
-    #client.vm.box_version = "20230131.0.0"
+    client.vm.box = "rreye/jammy64-gui"
+    client.vm.box_version = "20240306"
     client.vm.box_check_update = false
     client.vm.hostname = CLIENT_HOSTNAME
-    client.vm.network "private_network", ip: "192.172.16.30", virtualbox__intnet: true
+    client.vm.network "private_network", ip: "192.172.16.30", virtualbox__intnet: "omv"
     client.vm.synced_folder ".", "/vagrant", type: "virtualbox"
 
     client.vm.provider "virtualbox" do |prov|
@@ -60,8 +54,8 @@ Vagrant.configure("2") do |config|
       prov.name = "AISI-P5-Client"
       prov.cpus = 2
       prov.memory = 2048
+      prov.customize ["modifyvm", :id, "--vram", "16"]
+      prov.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
     end
-
-    client.vm.provision "shell", run: "once", path: "provisioning/setup-client.sh"
   end
 end
