@@ -54,8 +54,9 @@ Vagrant.configure("2") do |config|
       prov.name = "AISI-P5-Client"
       prov.cpus = 2
       prov.memory = 2048
-      prov.customize ["modifyvm", :id, "--vram", "16"]
+      prov.customize ["modifyvm", :id, "--vram", "32"]
       prov.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+      prov.customize ["modifyvm", :id, "--uart1", "off"]
     end
   end
 end
