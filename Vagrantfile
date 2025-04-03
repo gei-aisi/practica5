@@ -1,10 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 require_relative 'provisioning/vbox.rb'
-VBoxUtils.check_version('7.0.14')
-Vagrant.require_version ">= 2.4.1"
+VBoxUtils.check_version('7.1.6')
+Vagrant.require_version ">= 2.4.3"
 
-CLIENT_HOSTNAME = "xxx2324-client"
+CLIENT_HOSTNAME = "X-client"
 # DO NOT change the OMV hostname
 OMV_HOSTNAME = "omv-server"
 
@@ -17,7 +17,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "omv-server", primary: true do |omv|
     omv.vm.box = "rreye/omv7"
-    omv.vm.box_version = "1.0"
+    omv.vm.box_version = "1.1"
     omv.vm.box_check_update = false
     omv.vm.hostname = OMV_HOSTNAME
     omv.vm.network "forwarded_port", guest: 80, host: 9090
@@ -43,7 +43,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "client" do |client|
     client.vm.box = "rreye/jammy64-gui"
-    client.vm.box_version = "20240306"
+    client.vm.box_version = "20250224"
     client.vm.box_check_update = false
     client.vm.hostname = CLIENT_HOSTNAME
     client.vm.network "private_network", ip: "192.172.16.30", virtualbox__intnet: "omv"
