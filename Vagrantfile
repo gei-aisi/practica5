@@ -23,7 +23,8 @@ Vagrant.configure("2") do |config|
     omv.vm.hostname = OMV_HOSTNAME
     omv.vm.network "forwarded_port", guest: 80, host: 9090
     omv.vm.network "private_network", ip: "192.172.16.25", virtualbox__intnet: "omv"
-
+    omv.vm.provision "omv-dns", type: "shell", run: "once", path: "provisioning/fallback-dns.sh"
+    
     for i in 0..2 do
         omv.vm.disk :disk, size: "10GB", primary: false, name: "disk#{i}"
     end
